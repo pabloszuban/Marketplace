@@ -229,41 +229,6 @@
         "Address"
       ]
     },
-    "/home/pabloszuban/Documentos/Rather Labs/Training Program/MarketPlace/node_modules/@openzeppelin/contracts/utils/Context.sol": {
-      "lastModificationDate": 1695235748386,
-      "contentHash": "5f2c5c4b6af2dd4551027144797bc8be",
-      "sourceName": "@openzeppelin/contracts/utils/Context.sol",
-      "solcConfig": {
-        "version": "0.8.9",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.0"
-      ],
-      "artifacts": [
-        "Context"
-      ]
-    },
     "/home/pabloszuban/Documentos/Rather Labs/Training Program/MarketPlace/node_modules/@openzeppelin/contracts/utils/Strings.sol": {
       "lastModificationDate": 1695235748402,
       "contentHash": "48686fc32a22a3754b8e63321857dd2a",
@@ -300,6 +265,41 @@
       ],
       "artifacts": [
         "Strings"
+      ]
+    },
+    "/home/pabloszuban/Documentos/Rather Labs/Training Program/MarketPlace/node_modules/@openzeppelin/contracts/utils/Context.sol": {
+      "lastModificationDate": 1695235748386,
+      "contentHash": "5f2c5c4b6af2dd4551027144797bc8be",
+      "sourceName": "@openzeppelin/contracts/utils/Context.sol",
+      "solcConfig": {
+        "version": "0.8.9",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "Context"
       ]
     },
     "/home/pabloszuban/Documentos/Rather Labs/Training Program/MarketPlace/node_modules/@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol": {
@@ -587,8 +587,8 @@
       "artifacts": []
     },
     "/home/pabloszuban/Documentos/Rather Labs/Training Program/MarketPlace/contracts/marketPlace.sol": {
-      "lastModificationDate": 1695771851872,
-      "contentHash": "84355bf35da58909d843e4ab7d4489ae",
+      "lastModificationDate": 1696419124589,
+      "contentHash": "c9eb8280b689d33db92008251ba632a8",
       "sourceName": "contracts/marketPlace.sol",
       "solcConfig": {
         "version": "0.8.9",

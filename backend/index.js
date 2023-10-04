@@ -7,6 +7,8 @@ const bodyParser = require("body-parser");
 const { ethers } = require("hardhat");
 const marketPlaceAddress = require("../deployments/contractsData/Marketplace-address.json");
 const marketPlaceABI = require("../deployments/contractsData/Marketplace.json");
+const NFTContractAddress = require("../deployments/contractsData/NFT-address.json");
+const NFTContractABI = require("../deployments/contractsData/NFT.json");
 
 const toWei = (num) => ethers.utils.parseEther(num.toString())
 const fromWei = (num) => ethers.utils.formatEther(num)
@@ -15,7 +17,7 @@ const fromWei = (num) => ethers.utils.formatEther(num)
 let sellers = [];
 
 // Función para crear un vendedor y su información en el Marketplace
-async function createSeller(address, marketplaceContract) {
+async function createSeller(address, marketplaceContract, NFTContract) {
   //const sellerWallet = new ethers.Wallet(privateKey, provider);
   const sellerNFTs = [];
   const itemCount = await marketplaceContract.itemCount();
@@ -23,7 +25,11 @@ async function createSeller(address, marketplaceContract) {
   for (let i=1; i<=itemCount; i++){
       const item = await marketplaceContract.items(i);
       if (item.seller === address){
-          sellerNFTs.push({ itemId: item.itemId ,tokenId: item.tokenId, inSale: item.sold, buyers: [] });
+          const uri = await NFTContract.tokenURI(item.tokenId);
+          const uriJSON = JSON.parse(uri);
+          const name = uriJSON.name;
+          //const description = uriJSON.description;
+          sellerNFTs.push({ name: name, itemId: item.itemId ,tokenId: item.tokenId, inSale: item.sold, buyers: [] });
       }
   }
   sellers.push({
@@ -38,7 +44,7 @@ async function createSeller(address, marketplaceContract) {
 
 // Función para crear todos los vendedores del Marketplace
 
-async function createAllSellers(marketplaceContract) {
+async function createAllSellers(marketplaceContract, NFTContract) {
   //sellers = []; 
   const itemCount = await marketplaceContract.itemCount();
   console.log("itemCount:", itemCount);
@@ -54,7 +60,7 @@ async function createAllSellers(marketplaceContract) {
               }
           }
           if (!sellerExists){
-              await createSeller(seller, marketplaceContract);
+              await createSeller(seller, marketplaceContract, NFTContract);
           }
       }
   }
@@ -98,6 +104,30 @@ async function makeOffer(seller, tokenId, buyer, price) {
         }
   }
 }  
+
+//Funcion para hacer un exchange
+
+async function makeExchangeOffer(seller, tokenId, buyer, exchangeTokenId, name, exchangeName) {
+  let indexToUpdate = -1;
+  console.log("sellers:", sellers);
+  // Convierte el tokenId a un objeto BigNumber
+  const tokenIdToFind = ethers.BigNumber.from(tokenId);
+  for (const s of sellers){
+    if (s.address === seller){
+      for (let i = 0; i < s.nfts.length; i++) {
+        if (s.nfts[i].tokenId.eq(tokenIdToFind)) {
+          console.log("entre al if")
+          indexToUpdate = i;
+          console.log("indexToUpdate:", indexToUpdate);
+          break; // Detenemos la búsqueda una vez que encontramos el elemento
+        }
+      }
+    // Agrega la oferta al NFT
+    console.log(s.nfts[indexToUpdate].buyers)
+    s.nfts[indexToUpdate].buyers.push({ buyer, name, exchangeName: exchangeName ,exchangeTokenId, accepted: false });
+        }
+  }
+} 
 
 //Luego necesitamos una funcion que le permita a un seller aceptar una oferta. Para eso debe recibir un seller y un tokenId, verificar que esté en venta, y si lo está poder marcar la oferta como aceptada.
 
@@ -163,13 +193,20 @@ const main = async () => {
   // Conecta al contrato del Marketplace
   const marketplaceContract = new ethers.Contract(marketplaceAddress, marketplaceABI, deployerWallet);
 
+  // Lo mismo para el contrato del NFT
+  const nftContractAddress = NFTContractAddress.address;
+  const nftContractABI = NFTContractABI.abi;
+  
+  // Conecta al contrato del NFT
+  const NFTContract = new ethers.Contract(nftContractAddress, nftContractABI, deployerWallet);
+
   app.use(bodyParser.json());
 
   // Ruta para crear un vendedor
   app.post("/create-all-sellers", async (req, res) => {
     try {
       //sellers = [];
-      await createAllSellers(marketplaceContract);
+      await createAllSellers(marketplaceContract, NFTContract);
       res.status(200).json(sellers);
     } catch (error) {
       console.error(error);
@@ -182,6 +219,18 @@ const main = async () => {
     const { seller, tokenId, buyer, price } = req.params;
     try {
       await makeOffer(seller, tokenId, buyer, price);
+      res.status(200).json({ message: "Oferta realizada con éxito", sellers });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Error al realizar la oferta" });
+    }
+  });
+
+  //Ruta para hacer un exchange
+  app.post("/make-exchange-offer/:seller/:tokenId/:buyer/:exchangeTokenId/:name/:exchangeName", async (req, res) => {
+    const { seller, tokenId, buyer, exchangeTokenId, name, exchangeName } = req.params;
+    try {
+      await makeExchangeOffer(seller, tokenId, buyer, exchangeTokenId, name, exchangeName);
       res.status(200).json({ message: "Oferta realizada con éxito", sellers });
     } catch (error) {
       console.error(error);

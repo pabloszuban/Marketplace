@@ -60,7 +60,7 @@ describe("NFTMarketplace", function () {
       expect(await nft.balanceOf(addr2.address)).to.equal(1);
       expect(await nft.tokenURI(2)).to.equal(URI);
     });
-  })
+  });
 
   describe("Making marketplace items", function () {
     let result 
@@ -71,8 +71,7 @@ describe("NFTMarketplace", function () {
       await nft.connect(addr1).mint(URI2)
       // addr1 approves marketplace to spend nft
       await nft.connect(addr1).setApprovalForAll(marketplace.address, true)
-    })
-
+    });
 
     it("Should track newly created item, transfer NFT from seller to marketplace and emit Offered event", async function () {
       // addr1 offers their nft to the marketplace
@@ -83,7 +82,7 @@ describe("NFTMarketplace", function () {
           nft.address,
           1,
           addr1.address
-        )
+        );
       // addr1 offers their other nft to the marketplace
       await expect(marketplace.connect(addr1).makeItem(nft.address, 2))
         .to.emit(marketplace, "Offered")
@@ -92,37 +91,33 @@ describe("NFTMarketplace", function () {
           nft.address,
           2,
           addr1.address
-        )
+        );
       // Owner of NFTS should now be the marketplace
       expect(await nft.ownerOf(1)).to.equal(marketplace.address);
       expect(await nft.ownerOf(2)).to.equal(marketplace.address);
       // Item count should now equal 2
-      expect(await marketplace.itemCount()).to.equal(2)
+      expect(await marketplace.itemCount()).to.equal(2);
       // Get item from items mapping then check fields to ensure they are correct. For the first item:
-      const item = await marketplace.items(1)
-      expect(item.itemId).to.equal(1)
-      expect(item.nft).to.equal(nft.address)
-      expect(item.tokenId).to.equal(1)
-      expect(item.sold).to.equal(false)
+      const item = await marketplace.items(1);
+      expect(item.itemId).to.equal(1);
+      expect(item.nft).to.equal(nft.address);
+      expect(item.tokenId).to.equal(1);
+      expect(item.sold).to.equal(false);
       // The same but for the second item
-      const item2 = await marketplace.items(2)
-      expect(item2.itemId).to.equal(2)
-      expect(item2.nft).to.equal(nft.address)
-      expect(item2.tokenId).to.equal(2)
-      expect(item2.sold).to.equal(false)
-
+      const item2 = await marketplace.items(2);
+      expect(item2.itemId).to.equal(2);
+      expect(item2.nft).to.equal(nft.address);
+      expect(item2.tokenId).to.equal(2);
+      expect(item2.sold).to.equal(false);
     });
   });
+
   describe("Purchasing marketplace items", function () {
     let price = 2
-    priceInWei = toWei(price)
-    console.log("Precio en wei", priceInWei)
-    
-
+    let priceInWei; // Agregamos la declaración de priceInWei
 
     let fee = (feePercent/100)*price
-    let totalPriceInWei
-    
+    let totalPriceInWei;
 
     beforeEach(async function () {
       // addr1 mints an nft
@@ -131,17 +126,17 @@ describe("NFTMarketplace", function () {
       await nft.connect(addr1).setApprovalForAll(marketplace.address, true)
       // addr1 makes their nft a marketplace item.
       await marketplace.connect(addr1).makeItem(nft.address, 1)
-    })
+    });
+
     it("Should update item as sold, pay seller, transfer NFT to buyer, charge fees and emit a Bought event", async function () {
       const sellerInitalEthBal = await addr1.getBalance()
-      console.log("sellerInitalEthBal:", sellerInitalEthBal)  
       const feeAccountInitialEthBal = await deployer.getBalance()
       // fetch items total price (market fees + price)
+      priceInWei = toWei(price); // Asignamos el valor de priceInWei aquí
       totalPriceInWei = await marketplace.getTotalPrice(priceInWei);
-      console.log("totalPriceInWei:", totalPriceInWei) 
-      // addr 2 purchases item.
+      // addr2 purchases item.
       await expect(marketplace.connect(addr2).purchaseItem(1, priceInWei, {value: totalPriceInWei}))
-      .to.emit(marketplace, "Bought")
+        .to.emit(marketplace, "Bought")
         .withArgs(
           1,
           nft.address,
@@ -149,9 +144,8 @@ describe("NFTMarketplace", function () {
           toWei(price),
           addr1.address,
           addr2.address
-        )
+        );
       const sellerFinalEthBal = await addr1.getBalance()
-      console.log("sellerFinalEthBal:", sellerFinalEthBal)
       const feeAccountFinalEthBal = await deployer.getBalance()
       // Item should be marked as sold
       expect((await marketplace.items(1)).sold).to.equal(true)
@@ -161,7 +155,8 @@ describe("NFTMarketplace", function () {
       expect(+fromWei(feeAccountFinalEthBal)).to.equal(+fee + +fromWei(feeAccountInitialEthBal))
       // The buyer should now own the nft
       expect(await nft.ownerOf(1)).to.equal(addr2.address);
-    })
+    });
+
     it("Should fail for invalid item ids, sold items and when not enough ether is paid", async function () {
       // fails for invalid item ids
       await expect(
@@ -185,4 +180,52 @@ describe("NFTMarketplace", function () {
       ).to.be.revertedWith("item already sold");
     });
   });
-})
+
+  describe("Exchanging marketplace items", function () {
+    beforeEach(async function () {
+      // addr1 mints an nft
+      await nft.connect(addr1).mint(URI)
+      // addr1 approves marketplace to spend tokens
+      await nft.connect(addr1).setApprovalForAll(marketplace.address, true)
+      // addr1 makes their nft a marketplace item.
+      await marketplace.connect(addr1).makeItem(nft.address, 1)
+      // addr2 mints an nft 
+      await nft.connect(addr2).mint(URI2)
+      // addr2 approves marketplace to spend tokens 
+      await nft.connect(addr2).setApprovalForAll(marketplace.address, true)
+      // addr2 makes their nft a marketplace item.
+      await marketplace.connect(addr2).makeItem(nft.address, 2)
+    });
+
+    it("Should update item as sold, transfer NFT to buyer, transfer NFT to seller and emit a Exchanged event", async function () {
+      //Verify that the marketplace owns the nfts
+      expect(await nft.ownerOf(1)).to.equal(marketplace.address);
+      expect(await nft.ownerOf(2)).to.equal(marketplace.address);
+      console.log("Pase el expect");
+      // addr1 exchanges their nft for addr2's nft
+      await expect(marketplace.connect(addr2).exchangeItem(1, 2))
+        .to.emit(marketplace, "Exchanged")
+        .withArgs(
+          1,
+          nft.address,
+          1,
+          addr1.address,
+          addr2.address
+        )
+        .and.to.emit(marketplace, "Exchanged")
+        .withArgs(
+          2,
+          nft.address,
+          2,
+          addr2.address,
+          addr1.address
+        );
+      // Item should be marked as sold
+      expect((await marketplace.items(1)).sold).to.equal(true)
+      // The buyer should now own the nft
+      expect(await nft.ownerOf(1)).to.equal(addr2.address);
+      // The seller should now own the nft
+      expect(await nft.ownerOf(2)).to.equal(addr1.address);
+    });
+  });
+});

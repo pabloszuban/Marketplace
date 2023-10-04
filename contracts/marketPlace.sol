@@ -37,6 +37,13 @@ contract Marketplace is ReentrancyGuard {
         address indexed seller,
         address indexed buyer
     );
+    event Exchanged(
+        uint itemId,
+        address indexed nft,
+        uint tokenId,
+        address indexed seller,
+        address indexed buyer
+    );
 
     constructor(uint _feePercent) {
         feeAccount = payable(msg.sender);
@@ -90,6 +97,55 @@ contract Marketplace is ReentrancyGuard {
             msg.sender// Antes era msg.sender
         );
     }
+
+    function exchangeItem(uint _itemId, uint _itemIdToExchangeBackend) external nonReentrant {
+        // We first transfer nft from contract to buyer, who is the msg.sender
+        Item storage item = items[_itemId];
+        Item storage itemToExchange = items[_itemIdToExchangeBackend];
+
+        require(_itemId > 0 && _itemId <= itemCount, "item doesn't exist");
+        require(!item.sold, "item already sold");
+        require(_itemIdToExchangeBackend > 0 && _itemIdToExchangeBackend <= itemCount, "item doesn't exist");
+        require(!itemToExchange.sold, "item already sold");
+
+        // We verify that the marketplace is the owner of both nfts
+
+        require(item.nft.ownerOf(item.tokenId) == address(this), "marketplace is not the owner of the nft");
+
+        require(itemToExchange.nft.ownerOf(itemToExchange.tokenId) == address(this), "marketplace is not the owner of the nft");
+        
+        // transfer nft to buyer. Antes el buyer esa el msg.sender
+        item.nft.transferFrom(address(this), msg.sender, item.tokenId);
+        // transfer nft to seller
+        itemToExchange.nft.transferFrom(address(this), items[_itemId].seller, itemToExchange.tokenId);
+
+
+        // update item to sold
+        item.sold = true;
+        itemToExchange.sold = true;
+
+
+        // emit Exchanged event
+        emit Exchanged(
+            _itemId,
+            address(item.nft),
+            item.tokenId,
+            item.seller,
+            msg.sender
+        );
+        // Then we transfer nft from buyer to seller using the _itemIdToExchangeBackend
+        
+        // emit Exchanged event
+        emit Exchanged(
+            _itemIdToExchangeBackend,
+            address(itemToExchange.nft),
+            itemToExchange.tokenId,
+            msg.sender,
+            items[_itemId].seller
+        );
+    }
+
+
     function getTotalPrice(uint _priceBackend) view public returns(uint){
         return((_priceBackend*(100 + feePercent))/100);
     }

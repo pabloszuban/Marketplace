@@ -35,9 +35,15 @@ async function main() {
     const NFTContract = new ethers.Contract(nftContractAddress, nftContractABI, deployerWallet);
 
     //Set URIs for NFTs
-    const URI = "sample URI"
-    const URI2 = "sample URI 2"
-    const URI3 = "sample URI 3"
+    const name = "NFT"
+    const description = "NFT description"
+    const name1 = "NFT1"
+    const description1 = "NFT 1 description"
+    const name2 = "NFT2"
+    const description2 = "NFT 2 description"
+    const URI = JSON.stringify({ name: name, description: description});
+    const URI2 = JSON.stringify({ name: name1, description: description1 });
+    const URI3 = JSON.stringify({ name: name2, description: description2});
 
 
     // addr1 mints an nft
